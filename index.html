@@ -25,12 +25,8 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 2;
-            position: relative;
-            width: 100%;
-            height: 100%;
-            max-width: none;
-            max-height: none;
-            aspect-ratio: 1;
+            width: 450px;
+            height: 450px;
         }
         svg {
             position: absolute;
@@ -40,8 +36,6 @@
             height: 100%;
             background: transparent;
             shape-rendering: geometricPrecision;
-            text-rendering: geometricPrecision;
-            image-rendering: optimizeQuality;
         }
     </style>
 </head>
@@ -259,39 +253,6 @@
 
         // Start animation loop
         animate();
-
-        // Make the viewBox responsive
-        function updateViewBox() {
-            const container = document.querySelector('.center-container');
-            const containerRect = container.getBoundingClientRect();
-            
-            // Get the actual size (respecting maxWidth/maxHeight constraints)
-            const size = Math.min(containerRect.width, containerRect.height);
-            
-            // Calculate padding to maintain proper space around edges
-            const padding = size * 0.05; // 5% padding
-            
-            // Ensure container is square
-            container.style.width = `${size}px`;
-            container.style.height = `${size}px`;
-            
-            // Keep our target coords and center point consistent regardless of size
-            const baseViewBoxSize = 400; // Our base/reference size
-            const paddedSize = baseViewBoxSize + (padding * 2);
-            
-            // Update viewBox with padding on all sides, but keep coordinate system consistent
-            svg.setAttribute('viewBox', `${-padding} ${-padding} ${paddedSize} ${paddedSize}`);
-            
-            // Update scale-related calculations for responsive sizing
-            const scaleFactor = size / baseViewBoxSize;
-            document.documentElement.style.setProperty('--scale-factor', scaleFactor);
-        }
-
-        // Update on resize
-        window.addEventListener('resize', updateViewBox);
-        
-        // Initial update
-        updateViewBox();
     </script>
 </body>
 </html> 
