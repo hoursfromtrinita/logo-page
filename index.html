@@ -209,9 +209,9 @@
             const totalSpacing = totalSize - (gridSize * SQUARE_SIZE);
             const spacing = totalSpacing / (gridSize - 1);
             
-            // Center the entire grid in the 400x400 viewBox
-            const startX = (400 - totalSize) / 2;
-            const startY = (400 - totalSize) / 2;
+            // Center the entire grid in the viewBox
+            const startX = 200 - totalSize / 2;  // 200 is center of 400x400 viewBox
+            const startY = 200 - totalSize / 2;
             
             for (let row = 0; row < gridSize; row++) {
                 for (let col = 0; col < gridSize; col++) {
@@ -240,21 +240,20 @@
         }
 
         // Create the outer grid (380x380, 4x4)
-        createGrid(svg, 380, 4);
+        createGrid(svg, 340, 4);  // Reduced size for better proportion
 
         // Create the inner grid (270x270, 3x3)
-        createGrid(svg, 270, 3);
+        createGrid(svg, 240, 3);  // Reduced size for better proportion
 
         // Start animation loop
         animate();
 
-        // Make the viewBox responsive
         function updateViewBox() {
             const container = document.querySelector('.center-container');
             const containerRect = container.getBoundingClientRect();
             
             // Make sure we maintain a square aspect ratio with margins
-            const size = Math.min(window.innerWidth * 0.9, (window.innerHeight - 4 * 16) * 0.9); // Account for padding and 90% container
+            const size = Math.min(window.innerWidth * 0.9, (window.innerHeight - 4 * 16) * 0.9);
             
             // Update container size to maintain square aspect ratio
             container.style.width = `${size}px`;
@@ -262,7 +261,7 @@
             
             // Keep coordinate system consistent with more padding for centering
             const baseViewBoxSize = 400;
-            const padding = 40; // Increased padding for better centering
+            const padding = 60; // Increased padding for better centering
             
             // Update viewBox with equal padding on all sides
             svg.setAttribute('viewBox', `${-padding} ${-padding} ${baseViewBoxSize + padding * 2} ${baseViewBoxSize + padding * 2}`);
