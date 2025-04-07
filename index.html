@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Grid Layout</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .center-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            width: 450px;
+            height: 450px;
+            max-width: 90vmin;
+            max-height: 90vmin;
+        }
+        svg {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="center-container">
+        <svg id="mainCanvas" viewBox="-20 -20 440 440">
+            <defs>
+                <filter id="morphFilter">
+                    <!-- Simple blur for fillet-like bevel -->
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="1" result="blur"/>
+                    
+                    <!-- Sharp threshold to create fillet effect -->
+                    <feColorMatrix in="blur" type="matrix" values="
+                        1 0 0 0 0
+                        0 1 0 0 0
+                        0 0 1 0 0
+                        0 0 0 25 -5" result="threshold"/>
+                </filter>
+            </defs>
+        </svg>
+    </div>
+
+    <script>
+        const svg = document.getElementById('mainCanvas');
+        const SQUARE_SIZE = 40; // Further increased for larger grid
+        let targetX = 200;
+        let targetY = 200;
+        let mouseX = 200;
+        let mouseY = 200;
+        let squares = [];
+        let animationFrame;
+        let isMouseInBounds = false;
+        let lastActiveTime = 0;
+        let wasOutside = true; // Track if mouse was previously outside
+        const BUFFER_ZONE = 6;
+        const TRANSITION_SPEED = 0.08;
+        const ENTRY_EASE_FACTOR = 0.06; // Slightly faster entry for responsiveness
+        const EXIT_EASE_FACTOR = 0.04; // Base exit speed
+        const EXIT_SLOWDOWN = 0.3; // Controls how quickly the exit slows down over time
+
+        function lerp(start, end, factor) {
+            return start + (end - start) * factor;
+        }
+
+        function resetGridToCenter() {
+            targetX = 200;
+            targetY = 200;
+        }
+
+        function animate() {
+            const currentTime = performance.now();
+            const timeSinceActive = (currentTime - lastActiveTime) / 1000; // Convert to seconds
+            
+            let transitionFactor;
+            
+            if (!isMouseInBounds) {
+                // Gradually slow down the transition for a more natural return
+                // This creates a "spring-like" easing out effect
+                transitionFactor = EXIT_EASE_FACTOR * (1 / (1 + timeSinceActive * EXIT_SLOWDOWN));
+                
+                // Ensure minimum speed to prevent getting stuck
+                transitionFactor = Math.max(transitionFactor, 0.01);
+            } else {
+                // Smoother, slightly faster entry
+                transitionFactor = ENTRY_EASE_FACTOR;
+                lastActiveTime = currentTime;
+            }
+            
+            mouseX = lerp(mouseX, targetX, transitionFactor);
+            mouseY = lerp(mouseY, targetY, transitionFactor);
+            
+            updateSquares();
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        function isMouseWithinBounds(e, rect) {
+            return (
+                e.clientX >= rect.left - BUFFER_ZONE &&
+                e.clientX <= rect.right + BUFFER_ZONE &&
+                e.clientY >= rect.top - BUFFER_ZONE &&
+                e.clientY <= rect.bottom + BUFFER_ZONE
+            );
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            const container = document.querySelector('.center-container');
+            const rect = container.getBoundingClientRect();
+            
+            const mouseWithinBounds = isMouseWithinBounds(e, rect);
+            
+            // Detect entering the area
+            if (mouseWithinBounds && !isMouseInBounds) {
+                isMouseInBounds = true;
+                wasOutside = false;
+            } 
+            // Detect leaving the area
+            else if (!mouseWithinBounds && isMouseInBounds) {
+                isMouseInBounds = false;
+                resetGridToCenter();
+                wasOutside = true;
+            }
+            
+            // Update target position when in bounds
+            if (isMouseInBounds) {
+                targetX = ((e.clientX - rect.left) / rect.width) * 400;
+                targetY = ((e.clientY - rect.top) / rect.height) * 400;
+            }
+        });
+
+        // Add mouseenter handler for better initial detection
+        document.querySelector('.center-container').addEventListener('mouseenter', (e) => {
+            if (wasOutside) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                if (isMouseWithinBounds(e, rect)) {
+                    isMouseInBounds = true;
+                    wasOutside = false;
+                    targetX = ((e.clientX - rect.left) / rect.width) * 400;
+                    targetY = ((e.clientY - rect.top) / rect.height) * 400;
+                }
+            }
+        });
+
+        function calculateScale(x, y) {
+            const dx = x - mouseX;
+            const dy = y - mouseY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const maxDistance = 400; // Match viewBox size
+            const normalizedDist = Math.min(distance / maxDistance, 1);
+            const maxScale = 2.5;
+            const minScale = 0.2;
+            return minScale + (maxScale - minScale) * Math.exp(-2.5 * normalizedDist);
+        }
+
+        function calculateRadius(x, y) {
+            const dx = x - mouseX;
+            const dy = y - mouseY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const maxDistance = 800; // Adjusted for larger grid
+            const normalizedDist = Math.min(distance / maxDistance, 1);
+            
+            const maxRadius = 80; // Increased for larger squares
+            return maxRadius * normalizedDist; // Linear increase with distance
+        }
+
+        function updateSquares() {
+            squares.forEach(square => {
+                const scale = calculateScale(square.centerX, square.centerY);
+                const radius = calculateRadius(square.centerX, square.centerY);
+                const scaledSize = SQUARE_SIZE * scale;
+                const offsetX = (scaledSize - SQUARE_SIZE) / 2;
+                const offsetY = (scaledSize - SQUARE_SIZE) / 2;
+                
+                square.element.setAttribute("width", scaledSize);
+                square.element.setAttribute("height", scaledSize);
+                square.element.setAttribute("x", square.baseX - offsetX);
+                square.element.setAttribute("y", square.baseY - offsetY);
+                square.element.setAttribute("rx", radius);
+                square.element.setAttribute("ry", radius);
+            });
+        }
+
+        function createGrid(container, totalSize, gridSize) {
+            // Create a group for the grid with the morph filter
+            const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            group.setAttribute("filter", "url(#morphFilter)");
+            container.appendChild(group);
+            
+            // Calculate spacing between squares
+            const totalSpacing = totalSize - (gridSize * SQUARE_SIZE);
+            const spacing = totalSpacing / (gridSize - 1);
+            
+            // Center the entire grid in the 400x400 viewBox
+            const startX = (400 - totalSize) / 2;
+            const startY = (400 - totalSize) / 2;
+            
+            for (let row = 0; row < gridSize; row++) {
+                for (let col = 0; col < gridSize; col++) {
+                    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    const baseX = startX + (col * (SQUARE_SIZE + spacing));
+                    const baseY = startY + (row * (SQUARE_SIZE + spacing));
+                    const centerX = baseX + SQUARE_SIZE / 2;
+                    const centerY = baseY + SQUARE_SIZE / 2;
+
+                    rect.setAttribute("x", baseX);
+                    rect.setAttribute("y", baseY);
+                    rect.setAttribute("width", SQUARE_SIZE);
+                    rect.setAttribute("height", SQUARE_SIZE);
+                    rect.setAttribute("fill", "#161616");
+                    group.appendChild(rect);
+
+                    squares.push({
+                        element: rect,
+                        baseX: baseX,
+                        baseY: baseY,
+                        centerX: centerX,
+                        centerY: centerY
+                    });
+                }
+            }
+        }
+
+        // Create the outer grid (380x380, 4x4)
+        createGrid(svg, 380, 4);
+
+        // Create the inner grid (270x270, 3x3)
+        createGrid(svg, 270, 3);
+
+        // Start animation loop
+        animate();
+
+        // Make the viewBox responsive
+        function updateViewBox() {
+            const container = document.querySelector('.center-container');
+            const containerRect = container.getBoundingClientRect();
+            
+            // Get the actual size (respecting maxWidth/maxHeight constraints)
+            const size = Math.min(containerRect.width, containerRect.height);
+            
+            // Calculate padding to maintain proper space around edges
+            const padding = size * 0.05; // 5% padding
+            
+            // Ensure container is square
+            container.style.width = `${size}px`;
+            container.style.height = `${size}px`;
+            
+            // Keep our target coords and center point consistent regardless of size
+            const baseViewBoxSize = 400; // Our base/reference size
+            const paddedSize = baseViewBoxSize + (padding * 2);
+            
+            // Update viewBox with padding on all sides, but keep coordinate system consistent
+            svg.setAttribute('viewBox', `${-padding} ${-padding} ${paddedSize} ${paddedSize}`);
+            
+            // Update scale-related calculations for responsive sizing
+            const scaleFactor = size / baseViewBoxSize;
+            document.documentElement.style.setProperty('--scale-factor', scaleFactor);
+        }
+
+        // Update on resize
+        window.addEventListener('resize', updateViewBox);
+        
+        // Initial update
+        updateViewBox();
+    </script>
+</body>
+</html> 
