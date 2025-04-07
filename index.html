@@ -17,23 +17,18 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 2em 0;
         }
         .center-container {
             position: relative;
             width: 100%;
             height: 100%;
-            aspect-ratio: 1;
-            max-width: calc(100vh - 4em);
-            max-height: calc(100vh - 4em);
             display: flex;
             justify-content: center;
             align-items: center;
         }
         svg {
-            position: absolute;
-            width: 90%;
-            height: 90%;
+            width: 100%;
+            height: 100%;
             background: transparent;
             shape-rendering: geometricPrecision;
             text-rendering: geometricPrecision;
@@ -43,7 +38,7 @@
 </head>
 <body>
     <div class="center-container">
-        <svg id="mainCanvas" viewBox="-20 -20 440 440" preserveAspectRatio="xMidYMid meet">
+        <svg id="mainCanvas" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet">
             <defs>
                 <filter id="morphFilter" filterUnits="userSpaceOnUse" x="-50%" y="-50%" width="200%" height="200%">
                     <!-- Improved blur for better anti-aliasing -->
@@ -200,18 +195,16 @@
         }
 
         function createGrid(container, totalSize, gridSize) {
-            // Create a group for the grid with the morph filter
             const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
             group.setAttribute("filter", "url(#morphFilter)");
             container.appendChild(group);
             
-            // Calculate spacing between squares
             const totalSpacing = totalSize - (gridSize * SQUARE_SIZE);
             const spacing = totalSpacing / (gridSize - 1);
             
-            // Center the entire grid in the viewBox
-            const startX = 200 - totalSize / 2;  // 200 is center of 400x400 viewBox
-            const startY = 200 - totalSize / 2;
+            // Center in 400x400 viewBox
+            const startX = (400 - totalSize) / 2;
+            const startY = (400 - totalSize) / 2;
             
             for (let row = 0; row < gridSize; row++) {
                 for (let col = 0; col < gridSize; col++) {
@@ -239,32 +232,17 @@
             }
         }
 
-        // Create the outer grid (380x380, 4x4)
-        createGrid(svg, 340, 4);  // Reduced size for better proportion
+        // Create grids with proper sizes for 400x400 viewBox
+        createGrid(svg, 300, 4);  // Outer grid
+        createGrid(svg, 220, 3);  // Inner grid
 
-        // Create the inner grid (270x270, 3x3)
-        createGrid(svg, 240, 3);  // Reduced size for better proportion
-
-        // Start animation loop
         animate();
 
         function updateViewBox() {
             const container = document.querySelector('.center-container');
-            const containerRect = container.getBoundingClientRect();
-            
-            // Make sure we maintain a square aspect ratio with margins
-            const size = Math.min(window.innerWidth * 0.9, (window.innerHeight - 4 * 16) * 0.9);
-            
-            // Update container size to maintain square aspect ratio
+            const size = Math.min(window.innerWidth, window.innerHeight);
             container.style.width = `${size}px`;
             container.style.height = `${size}px`;
-            
-            // Keep coordinate system consistent with more padding for centering
-            const baseViewBoxSize = 400;
-            const padding = 60; // Increased padding for better centering
-            
-            // Update viewBox with equal padding on all sides
-            svg.setAttribute('viewBox', `${-padding} ${-padding} ${baseViewBoxSize + padding * 2} ${baseViewBoxSize + padding * 2}`);
         }
 
         // Update on resize
