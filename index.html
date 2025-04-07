@@ -73,7 +73,7 @@
         let isMouseInBounds = false;
         let lastActiveTime = 0;
         let wasOutside = true; // Track if mouse was previously outside
-        const BUFFER_ZONE = 6;
+        const BUFFER_ZONE = 20; // Increased buffer zone for better detection
         const TRANSITION_SPEED = 0.08;
         const ENTRY_EASE_FACTOR = 0.06; // Slightly faster entry for responsiveness
         const EXIT_EASE_FACTOR = 0.04; // Base exit speed
@@ -115,13 +115,24 @@
         }
 
         function isMouseWithinBounds(e, rect) {
-            return (
-                e.clientX >= rect.left - BUFFER_ZONE &&
-                e.clientX <= rect.right + BUFFER_ZONE &&
-                e.clientY >= rect.top - BUFFER_ZONE &&
-                e.clientY <= rect.bottom + BUFFER_ZONE
-            );
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            // Add buffer zone to all sides
+            const left = rect.left - BUFFER_ZONE;
+            const right = rect.right + BUFFER_ZONE;
+            const top = rect.top - BUFFER_ZONE;
+            const bottom = rect.bottom + BUFFER_ZONE;
+            
+            return x >= left && x <= right && y >= top && y <= bottom;
         }
+
+        // Add mouseleave event for more reliable exit detection
+        document.querySelector('.center-container').addEventListener('mouseleave', () => {
+            isMouseInBounds = false;
+            resetGridToCenter();
+            wasOutside = true;
+        });
 
         document.addEventListener('mousemove', (e) => {
             const container = document.querySelector('.center-container');
@@ -129,19 +140,16 @@
             
             const mouseWithinBounds = isMouseWithinBounds(e, rect);
             
-            // Detect entering the area
             if (mouseWithinBounds && !isMouseInBounds) {
                 isMouseInBounds = true;
                 wasOutside = false;
             } 
-            // Detect leaving the area
             else if (!mouseWithinBounds && isMouseInBounds) {
                 isMouseInBounds = false;
                 resetGridToCenter();
                 wasOutside = true;
             }
             
-            // Update target position when in bounds
             if (isMouseInBounds) {
                 targetX = ((e.clientX - rect.left) / rect.width) * 400;
                 targetY = ((e.clientY - rect.top) / rect.height) * 400;
