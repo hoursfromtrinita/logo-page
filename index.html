@@ -262,23 +262,22 @@
             const container = document.querySelector('.center-container');
             const containerRect = container.getBoundingClientRect();
             
-            // Make sure we maintain a square aspect ratio
-            const size = Math.min(window.innerWidth, window.innerHeight);
-            
-            // Update container size to maintain square aspect ratio
-            container.style.width = `${size}px`;
-            container.style.height = `${size}px`;
+            // Use the actual container dimensions instead of window size
+            const size = Math.min(containerRect.width, containerRect.height);
             
             // Keep coordinate system consistent
             const baseViewBoxSize = 400;
-            const padding = 20; // Fixed padding for consistent look
+            const padding = 20;
             
             // Update viewBox
             svg.setAttribute('viewBox', `${-padding} ${-padding} ${baseViewBoxSize + padding * 2} ${baseViewBoxSize + padding * 2}`);
         }
 
-        // Update on resize
-        window.addEventListener('resize', updateViewBox);
+        // Update on resize and immediately
+        const resizeObserver = new ResizeObserver(() => {
+            updateViewBox();
+        });
+        resizeObserver.observe(document.querySelector('.center-container'));
         
         // Initial update
         updateViewBox();
