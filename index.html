@@ -17,15 +17,20 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 2em 0;
+            min-height: 100vh;
         }
         .center-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
             position: relative;
             width: 100%;
             height: 100%;
+            max-width: none;
+            max-height: none;
             aspect-ratio: 1;
-            max-width: calc(100vh - 4em);
-            max-height: calc(100vh - 4em);
         }
         svg {
             position: absolute;
@@ -252,8 +257,8 @@
             const container = document.querySelector('.center-container');
             const containerRect = container.getBoundingClientRect();
             
-            // Make sure we maintain a square aspect ratio with margins
-            const size = Math.min(window.innerWidth, window.innerHeight - 4 * 16); // 4em converted to pixels
+            // Make sure we maintain a square aspect ratio
+            const size = Math.min(window.innerWidth, window.innerHeight);
             
             // Update container size to maintain square aspect ratio
             container.style.width = `${size}px`;
